@@ -21,7 +21,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
+@app.get("/api/health")
+async def health_check():
+    return {"ok": True}
 
 def _extract_json(text: str):
     try:
