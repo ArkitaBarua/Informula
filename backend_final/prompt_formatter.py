@@ -46,7 +46,7 @@ GUIDANCE FOR CONTENT
 - IMPORTANT: Consider the user's diet_type when analyzing ingredients:
   - For "vegetarian" users: Flag any meat, poultry, fish, or animal-derived ingredients as incompatible
   - For "vegan" users: Flag any animal-derived ingredients including dairy, eggs, honey, etc.
-  - For "non-veg" users: All ingredients are generally acceptable from a dietary perspective
+  - For "non-vegetarian" users: All ingredients are generally acceptable from a dietary perspective
 - IMPORTANT: Consider the product type when analyzing ingredients:
   - For "food" products: Focus on nutritional value, food safety, and dietary compatibility
   - For "shampoo", "conditioner", "soap", "lotion", "sunscreen", "makeup", "skincare": Focus on skin safety, absorption, and cosmetic regulations

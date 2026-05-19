@@ -11,6 +11,18 @@ export type UserProfile = {
 const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) || 'http://127.0.0.1:8000';
 const storageKey = (userId: string) => `informula_profile_${userId}`;
 
+export function formatDietType(value: string): string {
+  if (value === 'non-veg' || value === 'non-vegetarian') return 'Non-vegetarian';
+  if (value === 'vegetarian') return 'Vegetarian';
+  if (value === 'vegan') return 'Vegan';
+  return value || '—';
+}
+
+export function normalizeDietType(value: string): string {
+  if (value === 'non-veg') return 'non-vegetarian';
+  return value;
+}
+
 export function defaultProfile(userId: string): UserProfile {
   return {
     id: userId,
@@ -42,14 +54,19 @@ export async function loadProfile(userId: string): Promise<UserProfile | null> {
     if (res.ok) {
       const data = await res.json();
       if (data?.id) {
-        toStorage(data);
-        return data as UserProfile;
+        const profile = { ...data, diet_type: normalizeDietType(data.diet_type ?? '') } as UserProfile;
+        toStorage(profile);
+        return profile;
       }
     }
   } catch {
     // fall through to local storage
   }
-  return fromStorage(userId);
+  const stored = fromStorage(userId);
+  if (stored) {
+    return { ...stored, diet_type: normalizeDietType(stored.diet_type) };
+  }
+  return null;
 }
 
 export async function saveProfile(profile: UserProfile): Promise<boolean> {

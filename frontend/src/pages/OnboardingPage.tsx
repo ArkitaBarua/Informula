@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useUser } from '@clerk/clerk-react';
-import { defaultProfile, loadProfile, saveProfile as persistProfile } from '@/services/profile';
+import { defaultProfile, formatDietType, loadProfile, saveProfile as persistProfile } from '@/services/profile';
 import { toast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, CheckCircle, Loader2, ArrowRight } from 'lucide-react';
@@ -239,7 +239,7 @@ const OnboardingPage: React.FC = () => {
                     <option value="">Select Diet</option>
                     <option value="vegan">Vegan</option>
                     <option value="vegetarian">Vegetarian</option>
-                    <option value="non-veg">Non-vegetarian</option>
+                    <option value="non-vegetarian">Non-vegetarian</option>
                   </select>
                 </div>
               </div>
@@ -395,7 +395,7 @@ const OnboardingPage: React.FC = () => {
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground">Diet Type</div>
-                  <div className="text-lg font-medium">{profile?.diet_type || '—'}</div>
+                  <div className="text-lg font-medium">{formatDietType(profile?.diet_type ?? '')}</div>
                 </div>
               </div>
               <div>

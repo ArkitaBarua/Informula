@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { UserButton, useUser } from '@clerk/clerk-react';
 import { toast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckCircle, Loader2 } from 'lucide-react';
+import { CheckCircle, Loader2, X } from 'lucide-react';
 import {
   defaultProfile,
   loadProfile,
@@ -151,7 +151,7 @@ const MyDataPage: React.FC = () => {
                   <option value="">Select</option>
                   <option value="vegan">Vegan</option>
                   <option value="vegetarian">Vegetarian</option>
-                  <option value="non-veg">NonΓÇæveg</option>
+                  <option value="non-vegetarian">Non-vegetarian</option>
                 </select>
               </div>
             </div>
@@ -165,8 +165,16 @@ const MyDataPage: React.FC = () => {
                 <label className="text-sm text-foreground/70">Past Medications</label>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {profile?.past_medication.map((m, i) => (
-                    <span key={i} className="px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs">{m}
-                      <button className="ml-2" onClick={() => setProfile(p => p ? { ...p, past_medication: p.past_medication.filter((_, idx) => idx !== i) } : p)}>├ù</button>
+                    <span key={i} className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs">
+                      {m}
+                      <button
+                        type="button"
+                        className="hover:text-emerald-900"
+                        aria-label={`Remove ${m}`}
+                        onClick={() => setProfile(p => p ? { ...p, past_medication: p.past_medication.filter((_, idx) => idx !== i) } : p)}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
                     </span>
                   ))}
                 </div>
@@ -185,8 +193,16 @@ const MyDataPage: React.FC = () => {
                 <label className="text-sm text-foreground/70">Allergies</label>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {profile?.allergies.map((m, i) => (
-                    <span key={i} className="px-2 py-1 rounded-full bg-rose-100 text-rose-700 text-xs">{m}
-                      <button className="ml-2" onClick={() => setProfile(p => p ? { ...p, allergies: p.allergies.filter((_, idx) => idx !== i) } : p)}>├ù</button>
+                    <span key={i} className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-rose-100 text-rose-700 text-xs">
+                      {m}
+                      <button
+                        type="button"
+                        className="hover:text-rose-900"
+                        aria-label={`Remove ${m}`}
+                        onClick={() => setProfile(p => p ? { ...p, allergies: p.allergies.filter((_, idx) => idx !== i) } : p)}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
                     </span>
                   ))}
                 </div>
@@ -205,8 +221,16 @@ const MyDataPage: React.FC = () => {
                 <label className="text-sm text-foreground/70">Avoid List</label>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {profile?.avoid_list.map((m, i) => (
-                    <span key={i} className="px-2 py-1 rounded-full bg-amber-100 text-amber-700 text-xs">{m}
-                      <button className="ml-2" onClick={() => setProfile(p => p ? { ...p, avoid_list: p.avoid_list.filter((_, idx) => idx !== i) } : p)}>├ù</button>
+                    <span key={i} className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-amber-100 text-amber-700 text-xs">
+                      {m}
+                      <button
+                        type="button"
+                        className="hover:text-amber-900"
+                        aria-label={`Remove ${m}`}
+                        onClick={() => setProfile(p => p ? { ...p, avoid_list: p.avoid_list.filter((_, idx) => idx !== i) } : p)}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
                     </span>
                   ))}
                 </div>
@@ -224,8 +248,8 @@ const MyDataPage: React.FC = () => {
           </div>
 
           <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => fetchOrCreateProfile()} disabled={loading}>{loading ? 'RefreshingΓÇª' : 'Refresh'}</Button>
-            <Button onClick={() => saveProfile()} disabled={saving || !profile}>{saving ? 'SavingΓÇª' : 'Save Profile'}</Button>
+            <Button variant="outline" onClick={() => fetchOrCreateProfile()} disabled={loading}>{loading ? 'Refreshing...' : 'Refresh'}</Button>
+            <Button onClick={() => saveProfile()} disabled={saving || !profile}>{saving ? 'Saving...' : 'Save Profile'}</Button>
           </div>
         </div>
       </div>
