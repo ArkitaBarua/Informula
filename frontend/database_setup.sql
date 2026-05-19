@@ -17,9 +17,10 @@ CREATE TABLE IF NOT EXISTS user_profiles (
 -- Enable Row Level Security
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
 
--- Create policy to allow users to manage their own profiles
-CREATE POLICY "Users can manage their own profiles" ON user_profiles
-  FOR ALL USING (auth.uid()::text = id);
+-- Clerk auth: use permissive policy or route profile CRUD through the backend API
+DROP POLICY IF EXISTS "Users can manage their own profiles" ON user_profiles;
+CREATE POLICY "Allow profile access" ON user_profiles
+  FOR ALL USING (true) WITH CHECK (true);
 
 -- Create function to automatically update updated_at
 CREATE OR REPLACE FUNCTION update_updated_at_column()

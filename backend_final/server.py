@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
 import base64
 
-from supabase_client import get_user_profile
+from supabase_client import get_user_profile, upsert_user_profile
 from prompt_formatter import format_prompt
 from gemini_client import get_ingredient_report
 import json
@@ -100,6 +100,27 @@ async def chat_reply(request: Request):
     except Exception as e:
         return { 'error': str(e) }
     return { 'answer': answer }
+
+
+@app.get("/api/profile/{user_id}")
+async def get_profile(user_id: str):
+    profile = get_user_profile(user_id)
+    if profile:
+        return profile
+    return None
+
+
+@app.put("/api/profile")
+async def save_profile(request: Request):
+    body = await request.json()
+    user_id = body.get("id")
+    if not user_id:
+        return {"error": "Profile id is required"}
+    try:
+        upsert_user_profile(body)
+        return {"ok": True}
+    except Exception as e:
+        return {"error": str(e)}
 
 
 @app.post("/api/analyze-image")

@@ -8,12 +8,13 @@ python-dotenv
 # LLM client (Google Gemini)
 google-generativeai
 
-# Supabase client
-supabase
+# Supabase client (realtime needs pydantic>=2.10; supabase needs httpx>=0.26)
+pydantic>=2.10.0,<3
+httpx>=0.26.0,<0.29
+supabase>=2.10.0,<3
 
 # OCR HTTP calls (Azure Computer Vision)
 requests
 
 # Needed by FastAPI for handling file uploads (UploadFile / Form)
 python-multipart
-

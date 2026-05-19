@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useUser } from '@clerk/clerk-react';
-import { supabase } from '@/lib/supabaseClient';
+import { loadProfile } from '@/services/profile';
 
 const BYPASS_PATHS = new Set<string>([
   '/post-auth',
@@ -34,19 +34,7 @@ const FirstLoginGuard: React.FC = () => {
       }
 
       try {
-        // Add timeout to prevent hanging
-        const profilePromise = supabase
-          .from('user_profiles')
-          .select('id, age, gender, diet_type')
-          .eq('id', user.id)
-          .maybeSingle();
-
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Profile check timeout')), 1500)
-        );
-
-        const { data } = await Promise.race([profilePromise, timeoutPromise]) as any;
-
+        const data = await loadProfile(user.id);
         const incomplete = !data || data.age === null || !data.gender || !data.diet_type;
         if (incomplete) {
           // Only redirect to onboarding on first sign-in

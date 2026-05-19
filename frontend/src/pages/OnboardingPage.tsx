@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useUser } from '@clerk/clerk-react';
-import { supabase } from '@/lib/supabaseClient';
+import { defaultProfile, loadProfile, saveProfile as persistProfile } from '@/services/profile';
 import { toast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, CheckCircle, Loader2, ArrowRight } from 'lucide-react';
@@ -44,18 +44,7 @@ const OnboardingPage: React.FC = () => {
     
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error checking existing profile:', error);
-        setError('Failed to check existing profile');
-        setLoading(false);
-        return;
-      }
+      const data = await loadProfile(user.id);
 
       if (data) {
         // Profile already exists, check if it's complete
@@ -88,17 +77,7 @@ const OnboardingPage: React.FC = () => {
           });
         }
       } else {
-        // No existing profile, create new one in memory only (don't save yet)
-        const defaultProfile: Profile = {
-          id: user.id,
-          age: null,
-          gender: '',
-          past_medication: [],
-          allergies: [],
-          avoid_list: [],
-          diet_type: ''
-        };
-        setProfile(defaultProfile);
+        setProfile(defaultProfile(user.id));
       }
     } catch (err) {
       console.error('Unexpected error checking profile:', err);
@@ -118,17 +97,11 @@ const OnboardingPage: React.FC = () => {
     setError(null);
     
     try {
-      // Use upsert to handle both insert and update cases
-      const { error } = await supabase
-        .from('user_profiles')
-        .upsert(profile, { 
-          onConflict: 'id'
-        });
-      
-      if (error) {
-        console.error('Error saving profile:', error);
-        setError(`Failed to save profile: ${error.message}`);
-        toast({ title: 'Save failed', description: error.message, variant: 'destructive' });
+      const ok = await persistProfile(profile);
+
+      if (!ok) {
+        setError('Failed to save profile');
+        toast({ title: 'Save failed', description: 'Please try again.', variant: 'destructive' });
       } else {
         // Mark onboarding as completed for this user
         if (user) {

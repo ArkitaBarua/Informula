@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '@clerk/clerk-react';
-import { supabase } from '@/lib/supabaseClient';
+import { loadProfile } from '@/services/profile';
 import { Loader2 } from 'lucide-react';
 
 const PostAuthGate: React.FC = () => {
@@ -13,21 +13,9 @@ const PostAuthGate: React.FC = () => {
       if (!isSignedIn || !user) return;
 
       try {
-        // Check if profile exists with a timeout
-        const profilePromise = supabase
-          .from('user_profiles')
-          .select('id, age, gender, diet_type')
-          .eq('id', user.id)
-          .maybeSingle();
+        const data = await loadProfile(user.id);
 
-        // Race between profile check and timeout (reduced to 1.5s for faster response)
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Profile check timeout')), 1500)
-        );
-
-        const { data, error } = await Promise.race([profilePromise, timeoutPromise]) as any;
-
-        if (error || !data) {
+        if (!data) {
           // If we can't read the row or no data, send to onboarding
           navigate('/onboarding', { replace: true });
           return;

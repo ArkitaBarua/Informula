@@ -1,134 +1,77 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { UserButton, useUser } from '@clerk/clerk-react';
-import { supabase } from '@/lib/supabaseClient';
 import { toast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { CheckCircle, Loader2 } from 'lucide-react';
+import {
+  defaultProfile,
+  loadProfile,
+  saveProfile as persistProfile,
+  type UserProfile,
+} from '@/services/profile';
 
 const MyDataPage: React.FC = () => {
   const navigate = useNavigate();
   const { isSignedIn, user } = useUser();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-
-  type Profile = {
-    id: string;
-    age: number | null;
-    gender: string;
-    past_medication: string[];
-    allergies: string[];
-    avoid_list: string[];
-    diet_type: string;
-  };
-
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [newMed, setNewMed] = useState('');
   const [newAllergy, setNewAllergy] = useState('');
   const [newAvoid, setNewAvoid] = useState('');
 
   const fetchOrCreateProfile = async () => {
-    if (!user) {
-      setError('Please sign in to access your profile');
-      return;
-    }
-    
-    setLoading(true);
-    setError(null);
-    setSuccess(null);
-    
-    try {
-      // Check if Supabase is configured
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-      
-      if (!supabaseUrl || !supabaseKey || supabaseUrl.includes('your-project-id') || supabaseKey.includes('your-anon-key')) {
-        setError('Supabase is not configured. Please set up your environment variables.');
-        setLoading(false);
-        return;
-      }
+    if (!user) return;
 
-      const { data, error } = await supabase.from('user_profiles').select('*').eq('id', user.id).single();
-      
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching profile:', error);
-        setError(`Failed to load profile: ${error.message}`);
-        setLoading(false);
-        return;
-      }
-      
-      if (!data) {
-        // No profile exists, create a default one for editing
-        setProfile({
-          id: user.id,
-          age: null,
-          gender: '',
-          past_medication: [],
-          allergies: [],
-          avoid_list: [],
-          diet_type: ''
-        });
-        setError('No profile found. Please fill out your information below.');
-        setLoading(false);
-        return;
-      } else {
-        // Load existing profile
-        setProfile({
-          id: data.id,
-          age: data.age ?? null,
-          gender: data.gender ?? '',
-          past_medication: Array.isArray(data.past_medication) ? data.past_medication : [],
-          allergies: Array.isArray(data.allergies) ? data.allergies : [],
-          avoid_list: Array.isArray(data.avoid_list) ? data.avoid_list : [],
-          diet_type: data.diet_type ?? ''
-        });
-        setSuccess('Profile loaded successfully!');
-      }
-    } catch (err) {
-      console.error('Unexpected error:', err);
-      setError('An unexpected error occurred. Please try again.');
+    setLoading(true);
+    setSuccess(null);
+
+    const data = await loadProfile(user.id);
+    if (data) {
+      setProfile({
+        id: data.id,
+        age: data.age ?? null,
+        gender: data.gender ?? '',
+        past_medication: Array.isArray(data.past_medication) ? data.past_medication : [],
+        allergies: Array.isArray(data.allergies) ? data.allergies : [],
+        avoid_list: Array.isArray(data.avoid_list) ? data.avoid_list : [],
+        diet_type: data.diet_type ?? '',
+      });
+    } else {
+      setProfile(defaultProfile(user.id));
     }
-    
+
     setLoading(false);
   };
 
-  const saveProfile = async (next?: Partial<Profile>) => {
-    if (!profile) {
-      setError('No profile to save');
-      return;
-    }
-    
+  const saveProfile = async (next?: Partial<UserProfile>) => {
+    if (!profile) return;
+
     setSaving(true);
-    setError(null);
     setSuccess(null);
-    
-    try {
-      const toSave = { ...profile, ...(next || {}) } as Profile;
-      const { error } = await supabase.from('user_profiles').upsert(toSave, { onConflict: 'id' });
-      
-      if (error) {
-        console.error('Error saving profile:', error);
-        setError(`Failed to save profile: ${error.message}`);
-        toast({ title: 'Save failed', description: error.message, variant: 'destructive' });
-      } else {
-        setProfile(toSave);
-        // Mark onboarding as completed for this user
-        if (user) {
-          localStorage.setItem(`hasCompletedOnboarding_${user.id}`, 'true');
-        }
-        setSuccess('Profile saved successfully!');
-        toast({ title: 'Success', description: 'Your profile has been updated.', variant: 'default' });
+
+    const toSave = { ...profile, ...(next || {}) } as UserProfile;
+    const ok = await persistProfile(toSave);
+
+    if (ok) {
+      setProfile(toSave);
+      if (user) {
+        localStorage.setItem(`hasCompletedOnboarding_${user.id}`, 'true');
       }
-    } catch (err) {
-      console.error('Unexpected error saving profile:', err);
-      setError('An unexpected error occurred while saving. Please try again.');
-      toast({ title: 'Save failed', description: 'An unexpected error occurred.', variant: 'destructive' });
+      setSuccess('Profile saved successfully!');
+      toast({ title: 'Success', description: 'Your profile has been updated.', variant: 'default' });
+    } else {
+      toast({
+        title: 'Save failed',
+        description: 'Could not save your profile. Please try again.',
+        variant: 'destructive',
+      });
     }
-    
+
     setSaving(false);
   };
 
@@ -153,31 +96,6 @@ const MyDataPage: React.FC = () => {
         </div>
 
         <div className="space-y-6">
-          {/* Error Alert */}
-          {error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                {error}
-                <br />
-                <br />
-                <strong>Setup Instructions:</strong>
-                <br />
-                1. Go to <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer" className="underline">Supabase Dashboard</a>
-                <br />
-                2. Create a new project
-                <br />
-                3. Go to Settings → API and copy your Project URL and anon key
-                <br />
-                4. Update your <code>.env</code> file with the real values
-                <br />
-                5. Run the SQL from <code>database_setup.sql</code> in Supabase SQL Editor
-                <br />
-                6. Restart your development server
-              </AlertDescription>
-            </Alert>
-          )}
-
           {/* Success Alert */}
           {success && (
             <Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
@@ -233,7 +151,7 @@ const MyDataPage: React.FC = () => {
                   <option value="">Select</option>
                   <option value="vegan">Vegan</option>
                   <option value="vegetarian">Vegetarian</option>
-                  <option value="non-veg">Non‑veg</option>
+                  <option value="non-veg">NonΓÇæveg</option>
                 </select>
               </div>
             </div>
@@ -248,7 +166,7 @@ const MyDataPage: React.FC = () => {
                 <div className="flex flex-wrap gap-2 mt-2">
                   {profile?.past_medication.map((m, i) => (
                     <span key={i} className="px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs">{m}
-                      <button className="ml-2" onClick={() => setProfile(p => p ? { ...p, past_medication: p.past_medication.filter((_, idx) => idx !== i) } : p)}>×</button>
+                      <button className="ml-2" onClick={() => setProfile(p => p ? { ...p, past_medication: p.past_medication.filter((_, idx) => idx !== i) } : p)}>├ù</button>
                     </span>
                   ))}
                 </div>
@@ -268,7 +186,7 @@ const MyDataPage: React.FC = () => {
                 <div className="flex flex-wrap gap-2 mt-2">
                   {profile?.allergies.map((m, i) => (
                     <span key={i} className="px-2 py-1 rounded-full bg-rose-100 text-rose-700 text-xs">{m}
-                      <button className="ml-2" onClick={() => setProfile(p => p ? { ...p, allergies: p.allergies.filter((_, idx) => idx !== i) } : p)}>×</button>
+                      <button className="ml-2" onClick={() => setProfile(p => p ? { ...p, allergies: p.allergies.filter((_, idx) => idx !== i) } : p)}>├ù</button>
                     </span>
                   ))}
                 </div>
@@ -288,7 +206,7 @@ const MyDataPage: React.FC = () => {
                 <div className="flex flex-wrap gap-2 mt-2">
                   {profile?.avoid_list.map((m, i) => (
                     <span key={i} className="px-2 py-1 rounded-full bg-amber-100 text-amber-700 text-xs">{m}
-                      <button className="ml-2" onClick={() => setProfile(p => p ? { ...p, avoid_list: p.avoid_list.filter((_, idx) => idx !== i) } : p)}>×</button>
+                      <button className="ml-2" onClick={() => setProfile(p => p ? { ...p, avoid_list: p.avoid_list.filter((_, idx) => idx !== i) } : p)}>├ù</button>
                     </span>
                   ))}
                 </div>
@@ -306,8 +224,8 @@ const MyDataPage: React.FC = () => {
           </div>
 
           <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => fetchOrCreateProfile()} disabled={loading}>{loading ? 'Refreshing…' : 'Refresh'}</Button>
-            <Button onClick={() => saveProfile()} disabled={saving || !profile}>{saving ? 'Saving…' : 'Save Profile'}</Button>
+            <Button variant="outline" onClick={() => fetchOrCreateProfile()} disabled={loading}>{loading ? 'RefreshingΓÇª' : 'Refresh'}</Button>
+            <Button onClick={() => saveProfile()} disabled={saving || !profile}>{saving ? 'SavingΓÇª' : 'Save Profile'}</Button>
           </div>
         </div>
       </div>
