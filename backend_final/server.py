@@ -46,22 +46,33 @@ def _extract_json(text: str):
     return None
 
 
+DEFAULT_PROFILE = {
+    'age': 'unknown',
+    'gender': 'unknown',
+    'diet_type': 'unknown',
+    'past_medication': [],
+    'allergies': [],
+    'avoid_list': [],
+}
+
+
 def run_pipeline(ingredients_text: str, user_id: Optional[str], product_type: str = '', product_name: str = ''):
-    user_profile = get_user_profile(user_id) if user_id else {
-        'age': 'unknown',
-        'gender': 'unknown',
-        'diet_type': 'unknown',
-        'past_medication': [],
-        'allergies': [],
-        'avoid_list': []
-    }
-    prompt = format_prompt(ingredients_text, user_profile, product_type, product_name)
-    result = get_ingredient_report(prompt)
+    user_profile = DEFAULT_PROFILE.copy()
+    if user_id:
+        profile = get_user_profile(user_id)
+        if profile:
+            user_profile = profile
+
+    try:
+        prompt = format_prompt(ingredients_text, user_profile, product_type, product_name)
+        result = get_ingredient_report(prompt)
+    except Exception as e:
+        return {'error': str(e)}
+
     parsed = _extract_json(result)
     if parsed is not None:
         return parsed
-    # If not valid JSON, wrap as error payload
-    return { 'error': 'LLM returned non-JSON', 'raw': result }
+    return {'error': 'LLM returned non-JSON', 'raw': result}
 
 
 @app.post("/api/chat")

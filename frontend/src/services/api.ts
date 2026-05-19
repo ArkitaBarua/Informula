@@ -42,14 +42,51 @@ export async function analyzeImageFile(file: File, userId?: string, productName?
   return res.json();
 }
 
+function shortenApiError(message: string): string {
+  const lower = message.toLowerCase();
+  if (
+    message === 'API Key Limit Reached' ||
+    message.includes('429') ||
+    lower.includes('quota') ||
+    lower.includes('api key') ||
+    lower.includes('rate limit')
+  ) {
+    return 'API Key Limit Reached';
+  }
+  if (message.length > 180) return `${message.slice(0, 180)}...`;
+  return message;
+}
+
+async function parseApiResponse(res: Response, label: string) {
+  if (!res.ok) {
+    let detail = `${label} failed (${res.status})`;
+    try {
+      const body = await res.json();
+      if (body?.error) detail = body.error;
+    } catch {
+      /* ignore */
+    }
+    throw new Error(shortenApiError(detail));
+  }
+  const data = await res.json();
+  if (data?.error) throw new Error(shortenApiError(data.error));
+  return data;
+}
+
 export async function analyzeText(ingredients: string, userId?: string, productName?: string, productType?: string): Promise<AnalysisResponse> {
-  const res = await fetch(`${API_BASE}/api/analyze-text`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ingredients, userId, productName, productType })
-  });
-  if (!res.ok) throw new Error(`Text analysis failed: ${res.status}`);
-  return res.json();
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/api/analyze-text`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ingredients, userId, productName, productType }),
+    });
+  } catch {
+    throw new Error(
+      `Cannot reach the API at ${API_BASE}. Start the backend with: cd backend_final && python main.py`
+    );
+  }
+  return parseApiResponse(res, 'Text analysis');
 }
 
 export async function chatAsk(question: string, history: { role: 'user' | 'ai'; content: string }[], initialAnalysis?: string, userId?: string): Promise<{ answer: string }> {

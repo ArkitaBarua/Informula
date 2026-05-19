@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
-import { Github, Linkedin, Twitter } from 'lucide-react';
+import { Github } from 'lucide-react';
 
 const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
@@ -40,7 +40,7 @@ const Footer: React.FC = () => {
           <div>
             <h4 className="text-lg font-semibold mb-4 text-gray-200">Stay Updated</h4>
             <p className="text-gray-400 mb-4">
-              We’re building Informula in the open — follow our socials for release notes and research highlights.
+              We’re building Informula in the open — see the repo for release notes and research highlights.
             </p>
             <div className="flex space-x-3">
               <Button onClick={handleScrollToTop} variant="outline" className="border-emerald-500 text-emerald-400 hover:bg-emerald-500/10">
@@ -56,9 +56,15 @@ const Footer: React.FC = () => {
           <div>
             <h4 className="text-lg font-semibold mb-4 text-gray-200">Follow Us</h4>
             <div className="flex space-x-6">
-              <a href="#" className="text-gray-400 hover:text-emerald-400 transition-transform duration-300 hover:scale-110"><Twitter size={24} /></a>
-              <a href="#" className="text-gray-400 hover:text-emerald-400 transition-transform duration-300 hover:scale-110"><Linkedin size={24} /></a>
-              <a href="#" className="text-gray-400 hover:text-emerald-400 transition-transform duration-300 hover:scale-110"><Github size={24} /></a>
+              <a
+                href="https://github.com/mishtimattu21/Informula-2.git"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Informula on GitHub"
+                className="text-gray-400 hover:text-emerald-400 transition-transform duration-300 hover:scale-110"
+              >
+                <Github size={24} />
+              </a>
             </div>
           </div>
         </div>
